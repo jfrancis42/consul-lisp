@@ -41,7 +41,9 @@ CL-USER>
 ```
 
 You can also ask for a recursive result. The results are returned as a
-list of conses of key:value pairs:
+list of conses of key:value pairs (note that this can be a very
+expensive operation in time, client memory, and server resources if
+the values are large - use with extreme caution):
 
 ```
 CL-USER> (consul:kv-put *consul* "foo" "test value 1")
@@ -69,6 +71,13 @@ of arbitrary functions.
 
 ## ToDo
 
+* Support for KV value watchers (with callbacks)
+* Support cas for puts
+* Support cas for deletes
+* Support flags for gets
+* Support flags for puts
+* Support acquire for puts
+* Support release for puts
+* Support recurse for delete
 * Support for Services
 * Support for Health Checks
-* Support for KV value watchers (with callbacks)
