@@ -71,20 +71,38 @@ times when doing API stuff."
 				    :content-type "application/json"
 				    :content what)))))
 
-(defun kv-get (creds var)
+(defun kv-get (creds var &key (recurse nil))
   (multiple-value-bind (body status)
-      (drakma:http-request (concatenate 'string (get-consul-kv creds) var)
+      (drakma:http-request (concatenate 'string (get-consul-kv creds) var
+					(if recurse "?recurse=true" ""))
 			   :method :get
 			   :accept "application/json"
 			   :content-type "application/json")
     (if (equal 404 status)
 	nil
-	(cl-base64:base64-string-to-string
-	 (cdr-assoc :*value
-		    (first
-		     (json:decode-json-from-string
-		      (babel:octets-to-string
-		       (nth-value 0 body)))))))))
+	(if recurse
+	    (mapcar
+	     (lambda (a)
+	       (cons
+		(consul:cdr-assoc :*key a)
+		(cl-base64:base64-string-to-string (consul:cdr-assoc :*value a))))
+	     (json:decode-json-from-string
+	      (babel:octets-to-string (nth-value 0 body))))
+	    (cl-base64:base64-string-to-string
+	     (cdr-assoc :*value
+			(first
+			 (json:decode-json-from-string
+			  (babel:octets-to-string
+			   (nth-value 0 body))))))))))
+
+(defun kv-delete (creds var)
+  (json:decode-json-from-string
+   (babel:octets-to-string
+    (nth-value 0
+	       (drakma:http-request (concatenate 'string (get-consul-kv creds) var)
+				    :method :delete
+				    :accept "application/json"
+				    :content-type "application/json")))))
 
 ;;; Local Variables:
 ;;; mode: Lisp

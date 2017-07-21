@@ -12,6 +12,7 @@
    :get-consul-kv
    :kv-get
    :kv-put
+   :kv-delete
    :tls
    :host
    :port
