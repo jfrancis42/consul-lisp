@@ -1,18 +1,18 @@
 # Consul
 
-This is a library to support HashiCorp's Consul. At this stage, only
-getting/putting KV values are supported, but full support for service
-discovery is in the works.
+This is a library to support HashiCorp's Consul.  At this stage, only
+getting/putting/deleting KV values is supported, but full support for
+service discovery is in the works.
 
-At this point, configuration and use of the library are extremely
-simple. You'll need to create a consul object (which holds the
-information about a given consul server), then make kv-get, kv-put,
-and kv-delete calls to get, set, and delete values. When instantiating
-the consul object, it assumes sane defaults if you don't supply any
-parameters. Specifically, if instantiated with not parameters, it
-assumes no TLS, a host of "localhost", a port of 8500, and a protocol
-version "1". There is a field for an authentication token, but this is
-unused in this version of code (will be supported in future versions).
+Configuration and use of the library is extremely simple.  You'll need
+to create a consul object (which holds the information about a given
+consul server), then make kv-get, kv-put, and kv-delete calls to get,
+set, and delete values.  When instantiating the consul object, it
+assumes sane defaults if you don't supply any parameters.
+Specifically, if instantiated with not parameters, it assumes no TLS,
+a host of "localhost", a port of 8500, and a protocol version "1".
+There is a field for an authentication token, but this is unused in
+this version of code (will be supported in future versions).
 
 ```
 CL-USER> (defvar *consul* (make-instance 'consul:consul :host "consul.example.com" :tls nil))
@@ -81,3 +81,4 @@ of arbitrary functions.
 * Support recurse for delete
 * Support for Services
 * Support for Health Checks
+* Support for tokens
