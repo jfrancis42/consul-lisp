@@ -26,15 +26,18 @@ consul KV values:
 ```
 CL-USER> (consul:kv-get *consul* "electric_boogaloo")
 NIL
+NIL
 CL-USER> (consul:kv-put *consul* "electric_boogaloo" "Test data.")
 T
 CL-USER> (consul:kv-get *consul* "electric_boogaloo")
 "Test data."
+6422
 CL-USER> (consul:kv-delete *consul* "electric_boogaloo")
 T
 CL-USER> (consul:kv-get *consul* "electric_boogaloo")
 NIL
-CL-USER>
+NIL
+CL-USER> 
 ```
 
 You can also ask for a recursive result. The results are returned as a

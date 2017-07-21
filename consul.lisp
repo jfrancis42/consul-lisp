@@ -85,7 +85,7 @@ use :keys, :recurse is automatically assumed)."
 			   :accept "application/json"
 			   :content-type "application/json")
     (if (equal 404 status)
-	nil
+	(values nil nil)
 	(let ((payload (json:decode-json-from-string
 			(babel:octets-to-string
 			 (nth-value 0 body)))))
