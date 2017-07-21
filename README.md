@@ -52,6 +52,14 @@ CL-USER> (consul:kv-get *consul* "/" :recurse t)
 CL-USER> 
 ```
 
+Finally, you can ask for just a list of keys:
+
+```
+(consul:kv-get *consul* "/" :keys t)
+("bar" "baz" "foo")
+CL-USER> 
+```
+
 That's it at this point. Future features will include support for
 services, health checks, and watchers for KV variables with callbacks
 of arbitrary functions.

@@ -7,7 +7,7 @@
 (defmacro cdr-assoc (name alist)
   "Replaces '(cdr (assoc name alist))' because it's used a bajillion
 times when doing API stuff."
-  `(cdr (assoc ,name ,alist)))
+  `(cdr (assoc ,name ,alist :test #'equal)))
 
 (defun parse-json-bytes (text)
   "Parse a list of bytes as a JSON string and return the decoded JSON."
@@ -71,29 +71,34 @@ times when doing API stuff."
 				    :content-type "application/json"
 				    :content what)))))
 
-(defun kv-get (creds var &key (recurse nil))
+(defun kv-get (creds var &key (recurse nil) (keys nil))
   (multiple-value-bind (body status)
       (drakma:http-request (concatenate 'string (get-consul-kv creds) var
-					(if recurse "?recurse=true" ""))
+					(if recurse "?recurse=true" "")
+					(if keys "?keys=true" ""))
 			   :method :get
 			   :accept "application/json"
 			   :content-type "application/json")
     (if (equal 404 status)
 	nil
-	(if recurse
-	    (mapcar
-	     (lambda (a)
-	       (cons
-		(consul:cdr-assoc :*key a)
-		(cl-base64:base64-string-to-string (consul:cdr-assoc :*value a))))
+	(cond
+	  (keys
+	   (json:decode-json-from-string (babel:octets-to-string (nth-value 0 body))))
+	  (recurse
+	   (mapcar
+	    (lambda (a)
+	      (cons
+	       (consul:cdr-assoc :*key a)
+	       (cl-base64:base64-string-to-string (consul:cdr-assoc :*value a))))
 	     (json:decode-json-from-string
-	      (babel:octets-to-string (nth-value 0 body))))
-	    (cl-base64:base64-string-to-string
-	     (cdr-assoc :*value
-			(first
-			 (json:decode-json-from-string
-			  (babel:octets-to-string
-			   (nth-value 0 body))))))))))
+	      (babel:octets-to-string (nth-value 0 body)))))
+	  (t
+	   (cl-base64:base64-string-to-string
+	    (cdr-assoc :*value
+		       (first
+			(json:decode-json-from-string
+			 (babel:octets-to-string
+			  (nth-value 0 body)))))))))))
 
 (defun kv-delete (creds var)
   (json:decode-json-from-string
