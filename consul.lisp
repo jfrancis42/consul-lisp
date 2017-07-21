@@ -49,7 +49,7 @@ times when doing API stuff."
 		:initarg :api-version
 		:initform nil)))
 
-(defmethod get-consul-kv ((c consul))
+(defmethod get-consul-kv-uri ((c consul))
   "Return the URI of the consul server in the form http://consul.foo.com:8500/v1/kv/"
   (concatenate 'string
 	       (if (tls c) "https://" "http://")
@@ -62,18 +62,23 @@ times when doing API stuff."
 	       "kv/"))
 
 (defun kv-put (creds var what)
+  "Set the variable 'var' to the value 'what' on the consul server 'creds'."
   (json:decode-json-from-string
    (babel:octets-to-string
     (nth-value 0
-	       (drakma:http-request (concatenate 'string (get-consul-kv creds) var)
+	       (drakma:http-request (concatenate 'string (get-consul-kv-uri creds) var)
 				    :method :put
 				    :accept "application/json"
 				    :content-type "application/json"
 				    :content what)))))
 
 (defun kv-get (creds var &key (recurse nil) (keys nil))
+  "Retrieve the value of the variable 'var' from the consul server
+'creds'. Recurse if :recurse is t, and return only the keys if :keys
+is t. Do not specify both :recurse and :keys (when you
+use :keys, :recurse is automatically assumed)."
   (multiple-value-bind (body status)
-      (drakma:http-request (concatenate 'string (get-consul-kv creds) var
+      (drakma:http-request (concatenate 'string (get-consul-kv-uri creds) var
 					(if recurse "?recurse=true" "")
 					(if keys "?keys=true" ""))
 			   :method :get
@@ -81,30 +86,32 @@ times when doing API stuff."
 			   :content-type "application/json")
     (if (equal 404 status)
 	nil
+	(let ((payload (json:decode-json-from-string
+			(babel:octets-to-string
+			 (nth-value 0 body)))))
 	(cond
 	  (keys
-	   (json:decode-json-from-string (babel:octets-to-string (nth-value 0 body))))
+	   payload)
 	  (recurse
 	   (mapcar
 	    (lambda (a)
 	      (cons
 	       (consul:cdr-assoc :*key a)
-	       (cl-base64:base64-string-to-string (consul:cdr-assoc :*value a))))
-	     (json:decode-json-from-string
-	      (babel:octets-to-string (nth-value 0 body)))))
+	       (cl-base64:base64-string-to-string (consul:cdr-assoc :*value a)))) payload))
 	  (t
-	   (cl-base64:base64-string-to-string
-	    (cdr-assoc :*value
-		       (first
-			(json:decode-json-from-string
-			 (babel:octets-to-string
-			  (nth-value 0 body)))))))))))
+	   (values 
+	    (cl-base64:base64-string-to-string
+	     (cdr-assoc :*value
+			(first payload)))
+	    (cdr-assoc :*modify-index
+		       (first payload)))))))))
 
 (defun kv-delete (creds var)
+  "Delete the variable 'var' from the consul server 'creds'."
   (json:decode-json-from-string
    (babel:octets-to-string
     (nth-value 0
-	       (drakma:http-request (concatenate 'string (get-consul-kv creds) var)
+	       (drakma:http-request (concatenate 'string (get-consul-kv-uri creds) var)
 				    :method :delete
 				    :accept "application/json"
 				    :content-type "application/json")))))

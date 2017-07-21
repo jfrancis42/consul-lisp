@@ -9,7 +9,7 @@
    :as-string ; maybe not export
    :file-string ; maybe not export
    :consul
-   :get-consul-kv
+   :get-consul-kv-uri
    :kv-get
    :kv-put
    :kv-delete
