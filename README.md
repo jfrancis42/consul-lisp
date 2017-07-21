@@ -20,8 +20,8 @@ CL-USER> (defvar *consul* (make-instance 'consul:consul :host "consul.example.co
 CL-USER>
 ```
 
-Once the consul object has been created, it can be used to get and set
-consul KV values:
+Once the consul object has been created, it can be used to get, set,
+and delete consul KV values:
 
 ```
 CL-USER> (consul:kv-get *consul* "electric_boogaloo")
@@ -40,10 +40,10 @@ NIL
 CL-USER> 
 ```
 
-You can also ask for a recursive result. The results are returned as a
-list of conses of key:value pairs (note that this can be a very
-expensive operation in time, client memory, and server resources if
-the values are large - use with extreme caution):
+You can also ask for a recursive result. Recursive results are
+returned as a list of conses of key:value pairs (note that this can be
+a very expensive operation in time, client memory, and server
+resources if the values are large - use with extreme caution):
 
 ```
 CL-USER> (consul:kv-put *consul* "foo" "test value 1")
