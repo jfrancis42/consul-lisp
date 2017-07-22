@@ -82,3 +82,4 @@ of arbitrary functions.
 * Support for Services
 * Support for Health Checks
 * Support for tokens
+* Support for KV Transactions

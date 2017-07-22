@@ -58,6 +58,7 @@ endlessly when doing API stuff."
 'creds'. Recurse if :recurse is t, and return only the keys if :keys
 is t. Do not specify both :recurse and :keys (when you
 use :keys, :recurse is automatically assumed)."
+  (when (and recurse keys) (setf recurse nil))
   (multiple-value-bind (body status)
       (drakma:http-request (concatenate 'string (get-consul-kv-uri creds) var
 					(if recurse "?recurse=true" "")
