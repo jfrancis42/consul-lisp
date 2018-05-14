@@ -15,4 +15,7 @@
    :port
    :token
    :api-version
+   :consul-kv-put-handler
+   :consul-kv-get-handler
+   :consul-kv-delete-handler
    ))

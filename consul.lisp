@@ -45,13 +45,23 @@ endlessly when doing API stuff."
 
 (defun kv-put (creds var what)
   "Set the variable 'var' to the value 'what' on the consul server 'creds'."
-  (parse-json-bytes
-   (nth-value 0
-	      (drakma:http-request (concatenate 'string (get-consul-kv-uri creds) var)
-				   :method :put
-				   :accept "application/json"
-				   :content-type "application/json"
-				   :content what))))
+  (handler-case
+      (parse-json-bytes
+       (nth-value 0
+		  (drakma:http-request (concatenate 'string (get-consul-kv-uri creds) var)
+				       :method :put
+				       :accept "application/json"
+				       :content-type "application/json"
+				       :content what)))
+    (sb-int:simple-stream-error ()
+      (format *error-output* "consul kv-put: stream error")
+      nil)
+    (usocket:ns-host-not-found-error ()
+      (format *error-output* "consul kv-put: nameserver failure")
+      nil)
+    (usocket:timeout-error ()
+      (format *error-output* "consul kv-put: server timeout failure")
+      nil)))
 
 (defun kv-get (creds var &key (recurse nil) (keys nil))
   "Retrieve the value of the variable 'var' from the consul server
@@ -59,42 +69,62 @@ endlessly when doing API stuff."
 is t. Do not specify both :recurse and :keys (when you
 use :keys, :recurse is automatically assumed)."
   (when (and recurse keys) (setf recurse nil))
-  (multiple-value-bind (body status)
-      (drakma:http-request (concatenate 'string (get-consul-kv-uri creds) var
-					(if recurse "?recurse=true" "")
-					(if keys "?keys=true" ""))
-			   :method :get
-			   :accept "application/json"
-			   :content-type "application/json")
-    (if (equal 404 status)
-	(values nil nil)
-	(let ((payload (parse-json-bytes (nth-value 0 body))))
-	(cond
-	  (keys
-	   payload)
-	  (recurse
-	   (mapcar
-	    (lambda (a)
-	      (cons
-	       (consul:cdr-assoc :*key a)
-	       (cl-base64:base64-string-to-string
-		(consul:cdr-assoc :*value a)))) payload))
-	  (t
-	   (values 
-	    (cl-base64:base64-string-to-string
-	     (cdr-assoc :*value
-			(first payload)))
-	    (cdr-assoc :*modify-index
-		       (first payload)))))))))
+  (handler-case
+      (multiple-value-bind (body status)
+	  (drakma:http-request (concatenate 'string (get-consul-kv-uri creds) var
+					    (if recurse "?recurse=true" "")
+					    (if keys "?keys=true" ""))
+			       :method :get
+			       :accept "application/json"
+			       :content-type "application/json")
+	(if (equal 404 status)
+	    (values nil nil)
+	    (let ((payload (parse-json-bytes (nth-value 0 body))))
+	      (cond
+		(keys
+		 payload)
+		(recurse
+		 (mapcar
+		  (lambda (a)
+		    (cons
+		     (consul:cdr-assoc :*key a)
+		     (cl-base64:base64-string-to-string
+		      (consul:cdr-assoc :*value a)))) payload))
+		(t
+		 (values 
+		  (cl-base64:base64-string-to-string
+		   (cdr-assoc :*value
+			      (first payload)))
+		  (cdr-assoc :*modify-index
+			     (first payload))))))))
+    (sb-int:simple-stream-error ()
+      (format *error-output* "consul kv-get: stream error")
+      nil)
+    (usocket:ns-host-not-found-error ()
+      (format *error-output* "consul kv-get: nameserver failure")
+      (values nil nil))
+    (usocket:timeout-error ()
+      (format *error-output* "consul kv-get: server timeout failure")
+      (values nil nil))))
 
 (defun kv-delete (creds var)
   "Delete the variable 'var' from the consul server 'creds'."
-  (parse-json-bytes
-   (nth-value 0
-	      (drakma:http-request (concatenate 'string (get-consul-kv-uri creds) var)
-				   :method :delete
-				   :accept "application/json"
-				   :content-type "application/json"))))
+  (handler-case
+      (parse-json-bytes
+       (nth-value 0
+		  (drakma:http-request (concatenate 'string (get-consul-kv-uri creds) var)
+				       :method :delete
+				       :accept "application/json"
+				       :content-type "application/json")))
+    (sb-int:simple-stream-error ()
+      (format *error-output* "consul kv-delete: stream error")
+      nil)
+    (usocket:ns-host-not-found-error ()
+      (format *error-output* "consul kv-delete: nameserver failure")
+      nil)
+    (usocket:timeout-error ()
+      (format *error-output* "consul kv-delete: server timeout failure")
+      nil)))
 
 ;;; Local Variables:
 ;;; mode: Lisp
